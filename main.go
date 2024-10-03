@@ -16,6 +16,7 @@ package main
 import (
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -48,36 +49,45 @@ func main() {
 
 	paths := getAudioFilesPath(baseAudioFilesPath)
 
-	fmt.Println("List audio files...")
-	for key := range paths {
-		fmt.Println(key)
-	}
-
-	soundFlavour := "topre-purple-hybrid-pbt" // TODO: pass it as arg from terminal prompt
-	selectedAudioFile := paths[soundFlavour]
-
-	var configJsonPath string
-	var soundFilePath string
-	// this is temp solution
-	for _, file := range selectedAudioFile {
-		if has := strings.HasSuffix(file, ".json"); has {
-			configJsonPath = file
-		}
-		if has := strings.HasSuffix(file, ".ogg"); has {
-			soundFilePath = file
-		}
-	}
-
-	if configJsonPath == "" || soundFilePath == "" {
-		panic("no configJsonPath or soundFilePath found!")
-	}
-
 	var wg sync.WaitGroup
-	wg.Add(1)
 
-	go listenKeyboarInput(configJsonPath, soundFilePath)
+	// get args
+	args := os.Args[1:]
+
+	// if no args, just play a default sound
+	if len(args) == 0 {
+		configPaths, err := getConfigPaths(paths["cherrymx-black-abs"])
+		if err != nil {
+			panic(err)
+		}
+		wg.Add(1)
+		go listenKeyboarInput(configPaths.configJson, configPaths.soundFilePath)
+	} else {
+		arg := args[0]
+		switch arg {
+		case "list":
+			listSounds(paths)
+		case getKeyAsString(paths, arg):
+			configPaths, err := getConfigPaths(paths[arg])
+			if err != nil {
+				panic(err)
+			}
+			wg.Add(1)
+			go listenKeyboarInput(configPaths.configJson, configPaths.soundFilePath)
+		default:
+			fmt.Println("unknown args")
+		}
+	}
 
 	wg.Wait()
+}
+
+func getKeyAsString[T any](mymap map[string]T, arg string) string {
+	_, ok := mymap[arg]
+	if !ok {
+		return ""
+	}
+	return arg
 }
 
 /*
@@ -110,6 +120,35 @@ func listenKeyboarInput(configJsonPath string, soundFilePath string) {
 			}
 		}
 	}
+}
+
+type ConfigPaths struct {
+	configJson    string
+	soundFilePath string
+}
+
+// return json and soundfile path
+func getConfigPaths(selectedAudioFile []string) (ConfigPaths, error) {
+	var configJsonPath string
+	var soundFilePath string
+	// set json & ogg sound path
+	for _, file := range selectedAudioFile {
+		if has := strings.HasSuffix(file, ".json"); has {
+			configJsonPath = file
+		}
+		if has := strings.HasSuffix(file, ".ogg"); has {
+			soundFilePath = file
+		}
+	}
+
+	if configJsonPath == "" || soundFilePath == "" {
+		return ConfigPaths{}, errors.New("no confiig json path or sound path found")
+	}
+
+	return ConfigPaths{
+		configJson:    configJsonPath,
+		soundFilePath: soundFilePath,
+	}, nil
 }
 
 /*
@@ -185,4 +224,10 @@ func getAudioFilesPath(baseAudioFilesPath string) map[string][]string {
 	}
 
 	return paths
+}
+
+func listSounds(paths map[string][]string) {
+	for key := range paths {
+		fmt.Println(key)
+	}
 }
