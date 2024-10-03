@@ -25,6 +25,9 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/cqroot/prompt"
+	// "github.com/cqroot/prompt/choose"
 )
 
 type inputEvent struct {
@@ -44,6 +47,17 @@ type SoundPack struct {
 }
 
 const baseAudioFilesPath string = "./audio"
+
+func CheckErr(err error) {
+	if err != nil {
+		if errors.Is(err, prompt.ErrUserQuit) {
+			fmt.Fprintln(os.Stderr, "Error:", err)
+			os.Exit(1)
+		} else {
+			panic(err)
+		}
+	}
+}
 
 func main() {
 
@@ -66,7 +80,22 @@ func main() {
 		arg := args[0]
 		switch arg {
 		case "list":
-			listSounds(paths)
+			// listSounds(paths)
+			keyboardSoundsChoices := make([]string, 0)
+			for key := range paths {
+				keyboardSoundsChoices = append(keyboardSoundsChoices, key)
+			}
+
+			choice, err := prompt.New().Ask("Choose flavor:").Choose(keyboardSoundsChoices)
+			CheckErr(err)
+			// use selected input as a input
+			configPaths, err := getConfigPaths(paths[choice])
+			if err != nil {
+				panic(err)
+			}
+			wg.Add(1)
+			go listenKeyboarInput(configPaths.configJson, configPaths.soundFilePath)
+
 		case getKeyAsString(paths, arg):
 			configPaths, err := getConfigPaths(paths[arg])
 			if err != nil {
