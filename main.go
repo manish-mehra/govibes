@@ -14,6 +14,8 @@
 package main
 
 import (
+	"bufio"
+	"context"
 	"encoding/binary"
 	"encoding/json"
 	"errors"
@@ -58,7 +60,29 @@ func CheckErr(err error) {
 		}
 	}
 }
+func clearTerminal() {
+	fmt.Print("\033[H\033[2J")
+}
 
+// Color codes
+const (
+	Reset  = "\033[0m"
+	Red    = "\033[31m"
+	Green  = "\033[32m"
+	Yellow = "\033[33m"
+	Cyan   = "\033[36m"
+	White  = "\033[37m"
+)
+
+func printInstructions() {
+	commands := []string{"sounds", "help", "exit"}
+	fmt.Println(Yellow + "Available Commands:" + Reset)
+	fmt.Println(strings.Repeat("─", 50))
+	for _, cmd := range commands {
+		fmt.Printf("  - %s\n", Green+cmd+Reset) // Bullet points with color
+	}
+	fmt.Println(strings.Repeat("─", 50))
+}
 func main() {
 
 	paths := getAudioFilesPath(baseAudioFilesPath)
@@ -68,43 +92,75 @@ func main() {
 	// get args
 	args := os.Args[1:]
 
+	var cancel context.CancelFunc // holds the cancel function of the previous sound
+	var ctx context.Context
+
 	// if no args, just play a default sound
 	if len(args) == 0 {
-		configPaths, err := getConfigPaths(paths["cherrymx-black-abs"])
-		if err != nil {
-			panic(err)
+
+		keyboardSoundsChoices := make([]string, 0)
+		for key := range paths {
+			keyboardSoundsChoices = append(keyboardSoundsChoices, key)
 		}
-		wg.Add(1)
-		go listenKeyboardInput(configPaths.configJson, configPaths.soundFilePath)
+
+		fmt.Println(Cyan + "Welcome to Govibes CLI Tool! 🎧" + Reset)
+		printInstructions()
+
+		reader := bufio.NewReader(os.Stdin)
+		for {
+			fmt.Print("↪ ")
+			input, _ := reader.ReadString('\n')
+			switch input {
+			case "exit\n":
+				clearTerminal()
+				return // Exit program
+			case "sounds\n":
+				choice, err := prompt.New().Ask("Choose flavor:").Choose(keyboardSoundsChoices)
+				CheckErr(err)
+				configPaths, err := getConfigPaths(paths[choice])
+				if err != nil {
+					panic(err)
+				}
+				clearTerminal()
+				fmt.Println(Cyan + "Playing " + Yellow + choice + "🎧" + Reset)
+				// Cancel previous sound if it's playing
+				if cancel != nil {
+					cancel()
+				}
+				ctx, cancel = context.WithCancel(context.Background())
+				wg.Add(1)
+				go listenKeyboardInput(ctx, configPaths.configJson, configPaths.soundFilePath)
+			case "help\n":
+				printInstructions()
+			default:
+				fmt.Printf("Unknown command: %s", input)
+			}
+		}
+
 	} else {
 		arg := args[0]
 		switch arg {
 		// govibes list
-		case "list":
-			// listSounds(paths)
-			keyboardSoundsChoices := make([]string, 0)
-			for key := range paths {
-				keyboardSoundsChoices = append(keyboardSoundsChoices, key)
-			}
-
-			choice, err := prompt.New().Ask("Choose flavor:").Choose(keyboardSoundsChoices)
-			CheckErr(err)
-			// use selected input as a input
-			configPaths, err := getConfigPaths(paths[choice])
+		case "default":
+			configPaths, err := getConfigPaths(paths["cherrymx-black-abs"])
 			if err != nil {
 				panic(err)
 			}
-			wg.Add(1)
-			go listenKeyboardInput(configPaths.configJson, configPaths.soundFilePath)
 
-		// govibes nk-cream
+			ctx, _ = context.WithCancel(context.Background())
+			wg.Add(1)
+			go listenKeyboardInput(ctx, configPaths.configJson, configPaths.soundFilePath)
+			// govibes nk-cream
 		case getKeyAsString(paths, arg):
 			configPaths, err := getConfigPaths(paths[arg])
 			if err != nil {
 				panic(err)
 			}
+
+			ctx, _ = context.WithCancel(context.Background())
 			wg.Add(1)
-			go listenKeyboardInput(configPaths.configJson, configPaths.soundFilePath)
+			go listenKeyboardInput(ctx, configPaths.configJson, configPaths.soundFilePath)
+			fmt.Println(Cyan + "Playing " + Yellow + arg + "🎧" + Reset)
 		default:
 			fmt.Println("unknown args")
 		}
@@ -124,7 +180,7 @@ func getKeyAsString[T any](mymap map[string]T, arg string) string {
 /*
 * listent keyboard input from linux file system
  */
-func listenKeyboardInput(configJsonPath string, soundFilePath string) {
+func listenKeyboardInput(ctx context.Context, configJsonPath string, soundFilePath string) {
 
 	// TODO: find the right input channel
 	file, err := os.Open("/dev/input/event2") // Correct event device for your keyboard
@@ -151,19 +207,25 @@ func listenKeyboardInput(configJsonPath string, soundFilePath string) {
 	}
 
 	var event inputEvent
+
 	for {
-		// reading for key press from linux file
-		err := binary.Read(file, binary.LittleEndian, &event)
-		if err != nil {
-			fmt.Println("Error reading input event:", err)
-			break
-		}
-		// Check if the event type is EV_KEY (1)
-		if event.Type == 1 {
-			if event.Value == 1 { // Key press event
-				go playAudio(event, soundData, soundFilePath)
-			} else if event.Value == 0 { // Key release event
-				// let see what can be done here!!!
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			// reading for key press from linux file
+			err := binary.Read(file, binary.LittleEndian, &event)
+			if err != nil {
+				fmt.Println("Error reading input event:", err)
+				break
+			}
+			// Check if the event type is EV_KEY (1)
+			if event.Type == 1 {
+				if event.Value == 1 { // Key press event
+					go playAudio(event, soundData, soundFilePath)
+				} else if event.Value == 0 { // Key release event
+					// let see what can be done here!!!
+				}
 			}
 		}
 	}
@@ -224,7 +286,6 @@ func playAudio(input inputEvent, soundData SoundPack, audioFilePath string) {
 			fmt.Println("not enough values")
 		}
 	} else {
-		fmt.Println("key not found", input.Code)
 	}
 
 }
