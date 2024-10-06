@@ -4,7 +4,7 @@
  - bare minimum features are done: list sounds, pass sound flavour, and play keyboard sound
 
  Next Steps:
- - pass sound flavour as arg from terminal prompt
+ - pass sound flavour as arg from terminal prompt #
  - be able to set default from terminal
  - be able to change the sound flavour without terminating the program
 
@@ -75,10 +75,11 @@ func main() {
 			panic(err)
 		}
 		wg.Add(1)
-		go listenKeyboarInput(configPaths.configJson, configPaths.soundFilePath)
+		go listenKeyboardInput(configPaths.configJson, configPaths.soundFilePath)
 	} else {
 		arg := args[0]
 		switch arg {
+		// govibes list
 		case "list":
 			// listSounds(paths)
 			keyboardSoundsChoices := make([]string, 0)
@@ -94,15 +95,16 @@ func main() {
 				panic(err)
 			}
 			wg.Add(1)
-			go listenKeyboarInput(configPaths.configJson, configPaths.soundFilePath)
+			go listenKeyboardInput(configPaths.configJson, configPaths.soundFilePath)
 
+		// govibes nk-cream
 		case getKeyAsString(paths, arg):
 			configPaths, err := getConfigPaths(paths[arg])
 			if err != nil {
 				panic(err)
 			}
 			wg.Add(1)
-			go listenKeyboarInput(configPaths.configJson, configPaths.soundFilePath)
+			go listenKeyboardInput(configPaths.configJson, configPaths.soundFilePath)
 		default:
 			fmt.Println("unknown args")
 		}
@@ -122,7 +124,7 @@ func getKeyAsString[T any](mymap map[string]T, arg string) string {
 /*
 * listent keyboard input from linux file system
  */
-func listenKeyboarInput(configJsonPath string, soundFilePath string) {
+func listenKeyboardInput(configJsonPath string, soundFilePath string) {
 
 	// TODO: find the right input channel
 	file, err := os.Open("/dev/input/event2") // Correct event device for your keyboard
@@ -131,6 +133,22 @@ func listenKeyboarInput(configJsonPath string, soundFilePath string) {
 		return
 	}
 	defer file.Close()
+
+	// open config.json and marshal to json
+	jsonFile, err := os.Open(configJsonPath)
+	if err != nil {
+		panic(err)
+	}
+
+	jsonData, err := io.ReadAll(jsonFile)
+	if err != nil {
+		panic(err)
+	}
+
+	var soundData SoundPack
+	if err := json.Unmarshal(jsonData, &soundData); err != nil {
+		panic(err)
+	}
 
 	var event inputEvent
 	for {
@@ -143,7 +161,7 @@ func listenKeyboarInput(configJsonPath string, soundFilePath string) {
 		// Check if the event type is EV_KEY (1)
 		if event.Type == 1 {
 			if event.Value == 1 { // Key press event
-				go playAudio(event, configJsonPath, soundFilePath)
+				go playAudio(event, soundData, soundFilePath)
 			} else if event.Value == 0 { // Key release event
 				// let see what can be done here!!!
 			}
@@ -184,22 +202,7 @@ func getConfigPaths(selectedAudioFile []string) (ConfigPaths, error) {
 * unmarshal config.json
 * and execute sound based on keyevent and config.json mapping
  */
-func playAudio(input inputEvent, jsonConfigPath string, audioFilePath string) {
-
-	jsonFile, err := os.Open(jsonConfigPath)
-	if err != nil {
-		panic(err)
-	}
-	jsonData, err := io.ReadAll(jsonFile)
-	if err != nil {
-		panic(err)
-	}
-
-	var soundData SoundPack
-	if err := json.Unmarshal(jsonData, &soundData); err != nil {
-		panic(err)
-	}
-
+func playAudio(input inputEvent, soundData SoundPack, audioFilePath string) {
 	keyCodeStr := strconv.Itoa(int(input.Code))
 
 	if values, ok := soundData.Defines[keyCodeStr]; ok {
@@ -211,7 +214,7 @@ func playAudio(input inputEvent, jsonConfigPath string, audioFilePath string) {
 			cmd := exec.Command("play", audioFilePath, "trim", t1, t2)
 
 			// Use exec.Command to run the aplay command
-			err = cmd.Run()
+			err := cmd.Run()
 
 			if err != nil {
 				log.Fatalf("Error playing audio: %v", err)
@@ -253,10 +256,4 @@ func getAudioFilesPath(baseAudioFilesPath string) map[string][]string {
 	}
 
 	return paths
-}
-
-func listSounds(paths map[string][]string) {
-	for key := range paths {
-		fmt.Println(key)
-	}
 }
