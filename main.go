@@ -60,9 +60,6 @@ func CheckErr(err error) {
 		}
 	}
 }
-func clearTerminal() {
-	fmt.Print("\033[H\033[2J")
-}
 
 // Color codes
 const (
@@ -112,7 +109,6 @@ func main() {
 			input, _ := reader.ReadString('\n')
 			switch input {
 			case "exit\n":
-				clearTerminal()
 				return // Exit program
 			case "sounds\n":
 				choice, err := prompt.New().Ask("Choose flavor:").Choose(keyboardSoundsChoices)
@@ -121,7 +117,6 @@ func main() {
 				if err != nil {
 					panic(err)
 				}
-				clearTerminal()
 				fmt.Println(Cyan + "Playing " + Yellow + choice + "🎧" + Reset)
 				// Cancel previous sound if it's playing
 				if cancel != nil {
