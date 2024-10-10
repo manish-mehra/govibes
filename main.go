@@ -14,7 +14,6 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"encoding/binary"
 	"encoding/json"
@@ -71,15 +70,6 @@ const (
 	White  = "\033[37m"
 )
 
-func printInstructions() {
-	commands := []string{"sounds", "help", "exit"}
-	fmt.Println(Yellow + "Available Commands:" + Reset)
-	fmt.Println(strings.Repeat("─", 50))
-	for _, cmd := range commands {
-		fmt.Printf("  - %s\n", Green+cmd+Reset) // Bullet points with color
-	}
-	fmt.Println(strings.Repeat("─", 50))
-}
 func main() {
 
 	paths := getAudioFilesPath(baseAudioFilesPath)
@@ -92,45 +82,23 @@ func main() {
 	var cancel context.CancelFunc // holds the cancel function of the previous sound
 	var ctx context.Context
 
-	// if no args, just play a default sound
+	// if no args, start application in interactive mode
 	if len(args) == 0 {
+		ui_main()
 
-		keyboardSoundsChoices := make([]string, 0)
-		for key := range paths {
-			keyboardSoundsChoices = append(keyboardSoundsChoices, key)
+		// --------------
+		configPaths, err := getConfigPaths(paths["cherrymx-black-abs"])
+		if err != nil {
+			panic(err)
+		}
+		// Cancel previous sound if it's playing
+		if cancel != nil {
+			cancel()
 		}
 
-		fmt.Println(Cyan + "Welcome to Govibes CLI Tool! 🎧" + Reset)
-		printInstructions()
-
-		reader := bufio.NewReader(os.Stdin)
-		for {
-			fmt.Print("↪ ")
-			input, _ := reader.ReadString('\n')
-			switch input {
-			case "exit\n":
-				return // Exit program
-			case "sounds\n":
-				choice, err := prompt.New().Ask("Choose flavor:").Choose(keyboardSoundsChoices)
-				CheckErr(err)
-				configPaths, err := getConfigPaths(paths[choice])
-				if err != nil {
-					panic(err)
-				}
-				fmt.Println(Cyan + "Playing " + Yellow + choice + "🎧" + Reset)
-				// Cancel previous sound if it's playing
-				if cancel != nil {
-					cancel()
-				}
-				ctx, cancel = context.WithCancel(context.Background())
-				wg.Add(1)
-				go listenKeyboardInput(ctx, configPaths.configJson, configPaths.soundFilePath)
-			case "help\n":
-				printInstructions()
-			default:
-				fmt.Printf("Unknown command: %s", input)
-			}
-		}
+		ctx, cancel = context.WithCancel(context.Background())
+		wg.Add(1)
+		go listenKeyboardInput(ctx, configPaths.configJson, configPaths.soundFilePath)
 
 	} else {
 		arg := args[0]
