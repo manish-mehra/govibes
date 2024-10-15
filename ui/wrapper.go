@@ -18,44 +18,59 @@ func (m wrapperModel) Init() tea.Cmd {
 }
 
 func (m wrapperModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-
 	fmt.Printf("--> \r wrapper %s", msg)
-	// check for current view
-	// if already view set, pass down the the event
+
+	// Handle the view and pass the keystrokes to the correct model
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "esc", "ctrl+c":
 			return m, tea.Quit
+
 		case "s":
-			// check for current view
-			// if already view set, pass down the the event
 			if m.currentView == "s" {
-				m.sounds.Update(msg)
-				return m, nil
+				// Update sounds and reassign to m.sounds
+				updatedSounds, cmd := m.sounds.Update(msg)
+				m.sounds = updatedSounds.(soundModel) // Reassign the updated soundModel
+				return m, cmd
 			}
+
+			// Initialize sound list and set currentView to "s"
 			s := sound_list()
 			m.sounds = soundModel{table: s}
 			m.currentView = "s"
 			return m, nil
+
 		case "a":
 			if m.currentView == "a" {
-				m.about.Update(msg)
-				return m, nil
+				updatedAbout, cmd := m.about.Update(msg)
+				m.about = updatedAbout.(aboutModel)
+				return m, cmd
 			}
 			m.about = aboutModel{}
 			m.currentView = "a"
 			return m, nil
+
 		case "h":
 			m.currentView = "h"
 			return m, nil
+
 		default:
+			if m.currentView == "s" {
+				updatedSounds, cmd := m.sounds.Update(msg)
+				m.sounds = updatedSounds.(soundModel)
+				return m, cmd
+			}
+			if m.currentView == "a" {
+				updatedAbout, cmd := m.about.Update(msg)
+				m.about = updatedAbout.(aboutModel)
+				return m, cmd
+			}
 			return m, nil
 		}
 	}
 	return m, nil
 }
-
 func (m wrapperModel) View() string {
 
 	var ui = lipgloss.

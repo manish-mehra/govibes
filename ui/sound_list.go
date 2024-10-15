@@ -21,22 +21,14 @@ func (m soundModel) Init() tea.Cmd {
 }
 
 func (m soundModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-
-	fmt.Printf("\r sounds %s", msg)
+	m.table.Focus()
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "esc":
-			if m.table.Focused() {
-				m.table.Blur()
-			} else {
-				m.table.Focus()
-			}
 		case "enter":
-			return m, tea.Batch(
-				tea.Printf("Let's go to %s!", m.table.SelectedRow()[1]),
-			)
+			row := m.table.SelectedRow()[1]
+			fmt.Printf("\r play %s", row)
 		}
 	}
 	m.table, cmd = m.table.Update(msg)

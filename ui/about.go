@@ -12,7 +12,7 @@ func (m aboutModel) Init() tea.Cmd {
 	return nil
 }
 func (m aboutModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	return nil, nil
+	return m, nil
 }
 
 func (m aboutModel) View() string {
