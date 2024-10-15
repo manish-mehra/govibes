@@ -27,6 +27,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/manish-mehra/go-vibes/ui"
+
 	"github.com/cqroot/prompt"
 	// "github.com/cqroot/prompt/choose"
 )
@@ -84,7 +86,7 @@ func main() {
 
 	// if no args, start application in interactive mode
 	if len(args) == 0 {
-		ui_main()
+		ui.Ui_Main()
 
 		// --------------
 		configPaths, err := getConfigPaths(paths["cherrymx-black-abs"])

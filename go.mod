@@ -3,7 +3,7 @@ module github.com/manish-mehra/go-vibes
 go 1.22.7
 
 require (
-	github.com/charmbracelet/bubbles v0.20.0
+	github.com/charmbracelet/bubbles v0.20.0 // indirect
 	github.com/charmbracelet/bubbletea v1.1.1
 	github.com/charmbracelet/lipgloss v0.13.0
 	github.com/cqroot/prompt v0.9.4
