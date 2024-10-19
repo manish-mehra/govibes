@@ -4,12 +4,22 @@ package ui
 // from 5 and then exits.
 
 import (
+	"context"
 	"fmt"
 	"log"
+	"sync"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/manish-mehra/go-vibes/lib"
 )
+
+var paths = lib.GetAudioFilesPath("./audio")
+
+var wg sync.WaitGroup
+
+var cancel context.CancelFunc // holds the cancel function of the previous sound
+var ctx context.Context
 
 type model struct {
 	header       headerModel
@@ -42,6 +52,25 @@ func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			var updatedWrapper tea.Model
 			updatedWrapper, _ = m.wrapper.Update(message)
 			m.wrapper = updatedWrapper.(wrapperModel) // Reassign the updated wrapper model
+
+			// when sound is selected on the table
+			if m.wrapper.sounds.selectedSound != "" {
+				// set the current sound
+				m.currentSound = currentSoundModel{sound: m.wrapper.sounds.selectedSound}
+
+				// get config json & sound file path based on selected sound
+				configPaths, err := lib.GetConfigPaths(paths[m.wrapper.sounds.selectedSound])
+				if err != nil {
+					panic(err)
+				}
+				// Cancel previous sound if it's playing
+				if cancel != nil {
+					cancel()
+				}
+				ctx, cancel = context.WithCancel(context.Background())
+				wg.Add(1)
+				go lib.ListenKeyboardInput(ctx, configPaths.ConfigJson, configPaths.SoundFilePath)
+			}
 		}
 		return m, nil
 	case tea.WindowSizeMsg:

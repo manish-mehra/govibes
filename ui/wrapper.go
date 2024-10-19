@@ -1,11 +1,11 @@
 package ui
 
 import (
-	"fmt"
-
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
+
+var s = sound_list()
 
 type wrapperModel struct {
 	currentView string
@@ -18,7 +18,6 @@ func (m wrapperModel) Init() tea.Cmd {
 }
 
 func (m wrapperModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	fmt.Printf("--> \r wrapper %s", msg)
 
 	// Handle the view and pass the keystrokes to the correct model
 	switch msg := msg.(type) {
@@ -36,7 +35,6 @@ func (m wrapperModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 			// Initialize sound list and set currentView to "s"
-			s := sound_list()
 			m.sounds = soundModel{table: s}
 			m.currentView = "s"
 			return m, nil
@@ -76,9 +74,9 @@ func (m wrapperModel) View() string {
 	var ui = lipgloss.
 		NewStyle().
 		Align(lipgloss.Center).
-		Height(10).
-		Width(59).
-		BorderStyle(lipgloss.NormalBorder())
+		Height(20).
+		Width(59)
+		//BorderStyle(lipgloss.NormalBorder())
 	// Background(lipgloss.Color("#008000"))
 
 	switch m.currentView {

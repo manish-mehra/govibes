@@ -19,10 +19,11 @@ func (m aboutModel) View() string {
 
 	var ui = lipgloss.
 		NewStyle().
-		Height(16).
+		Height(20).
 		Align(lipgloss.Left).
-		Width(20).
-		BorderStyle(lipgloss.NormalBorder())
+		Width(59).
+		Background(lipgloss.Color("#1a3c5a"))
+		// BorderStyle(lipgloss.NormalBorder())
 
 	return ui.Render("About Page")
 }

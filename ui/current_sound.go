@@ -5,14 +5,15 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-type currentSoundModel struct{}
+type currentSoundModel struct {
+	sound string
+}
 
 func (m currentSoundModel) Init() tea.Cmd {
 	return nil
 }
 
 func (m currentSoundModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-
 	return m, nil
 }
 
@@ -24,7 +25,9 @@ func (m currentSoundModel) View() string {
 		Height(2).
 		Width(20).
 		BorderStyle(lipgloss.NormalBorder())
-
-	return ui.Render("cherrymx-black-abs")
+	if m.sound == "" {
+		m.sound = "nothing yet"
+	}
+	return ui.Render(m.sound)
 
 }
