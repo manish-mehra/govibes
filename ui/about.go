@@ -18,12 +18,7 @@ func (m aboutModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m aboutModel) View() string {
 
 	var ui = lipgloss.
-		NewStyle().
-		Height(20).
-		Align(lipgloss.Left).
-		Width(59).
-		Background(lipgloss.Color("#1a3c5a"))
-		// BorderStyle(lipgloss.NormalBorder())
+		NewStyle()
 
-	return ui.Render("About Page")
+	return ui.Render("About GoVibes")
 }

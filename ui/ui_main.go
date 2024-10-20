@@ -1,11 +1,11 @@
 package ui
 
-// A simple program that opens the alternate screen buffer then counts down
-// from 5 and then exits.
+// TODO: remove wrapper component.
+// TODO: Add about, help and sound in main model
+// TODO: table to list component
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"sync"
 
@@ -15,6 +15,7 @@ import (
 )
 
 var paths = lib.GetAudioFilesPath("./audio")
+var sound_ls = sound_list()
 
 var wg sync.WaitGroup
 
@@ -24,8 +25,10 @@ var ctx context.Context
 type model struct {
 	header       headerModel
 	currentSound currentSoundModel
-	wrapper      wrapperModel
 	options      optionsModel
+	about        aboutModel
+	sounds       soundModel
+	currentView  string // s, h, a
 	width        int
 	height       int
 }
@@ -36,11 +39,9 @@ func initModel() model {
 		currentSound: currentSoundModel{
 			sound: "No sound selected",
 		},
-		wrapper: wrapperModel{
-			currentView: "s",
-		},
-		options: optionsModel{},
-		width:   20,
+		currentView: "s",
+		options:     optionsModel{},
+		width:       20,
 	}
 }
 
@@ -62,29 +63,37 @@ func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q", "esc", "ctrl+c":
 			return m, tea.Quit
+		case "a":
+			m.currentView = "a"
+			return m, nil
+		case "s":
+			m.currentView = "s"
+			m.sounds = soundModel{table: sound_ls} // Warning: declared in wrapper
+
+			return m, nil
 		default:
-			var updatedWrapper tea.Model
-			updatedWrapper, _ = m.wrapper.Update(message)
-			m.wrapper = updatedWrapper.(wrapperModel) // Reassign the updated wrapper model
+			if m.currentView == "s" {
+				updatedSounds, _ := m.sounds.Update(msg)
+				m.sounds = updatedSounds.(soundModel) // Reassign the updated soundModel
 
-			// when sound is selected on the table
-			if m.wrapper.sounds.selectedSound != "" {
-				// set the current sound
-				m.currentSound = currentSoundModel{sound: m.wrapper.sounds.selectedSound}
+				if m.sounds.selectedSound != "" {
+					m.currentSound.sound = m.sounds.selectedSound
+					// get config json & sound file path based on selected sound
+					configPaths, err := lib.GetConfigPaths(paths[m.sounds.selectedSound])
+					if err != nil {
+						panic(err)
+					}
+					// Cancel previous sound if it's playing
+					if cancel != nil {
+						cancel()
+					}
+					ctx, cancel = context.WithCancel(context.Background())
+					wg.Add(1)
+					go lib.ListenKeyboardInput(ctx, configPaths.ConfigJson, configPaths.SoundFilePath)
 
-				// get config json & sound file path based on selected sound
-				configPaths, err := lib.GetConfigPaths(paths[m.wrapper.sounds.selectedSound])
-				if err != nil {
-					panic(err)
 				}
-				// Cancel previous sound if it's playing
-				if cancel != nil {
-					cancel()
-				}
-				ctx, cancel = context.WithCancel(context.Background())
-				wg.Add(1)
-				go lib.ListenKeyboardInput(ctx, configPaths.ConfigJson, configPaths.SoundFilePath)
 			}
+
 		}
 		return m, nil
 	case tea.WindowSizeMsg:
@@ -100,17 +109,20 @@ func (m model) View() string {
 		NewStyle().
 		Padding(2).
 		Border(lipgloss.NormalBorder())
-
-	var mainContainer = lipgloss.
-		JoinVertical(lipgloss.Left, m.options.View(), m.wrapper.View())
-
 	var header = lipgloss.
 		JoinHorizontal(lipgloss.Center, m.header.View(), lipgloss.NewStyle().MarginRight(2).Render(""), m.currentSound.View())
 
-	var layout = lipgloss.
-		JoinVertical(lipgloss.Top, header, mainContainer)
+	var aboutLayout = lipgloss.
+		JoinVertical(lipgloss.Top, header, m.options.View(), m.about.View())
+	if m.currentView == "a" {
+		return render.Render(aboutLayout)
+	}
 
-	return fmt.Sprint(
-		render.Render(layout),
-	)
+	var soundLayout = lipgloss.
+		JoinVertical(lipgloss.Top, header, m.options.View(), m.sounds.View())
+	if m.currentView == "s" {
+		return render.Render(soundLayout)
+	}
+
+	return render.Render(header, "unknow view")
 }
