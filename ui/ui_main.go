@@ -30,8 +30,22 @@ type model struct {
 	height       int
 }
 
+func initModel() model {
+	return model{
+		header: headerModel{},
+		currentSound: currentSoundModel{
+			sound: "No sound selected",
+		},
+		wrapper: wrapperModel{
+			currentView: "s",
+		},
+		options: optionsModel{},
+		width:   20,
+	}
+}
+
 func Ui_Main() {
-	p := tea.NewProgram(model{}, tea.WithAltScreen())
+	p := tea.NewProgram(initModel())
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)
 	}
@@ -84,18 +98,19 @@ func (m model) View() string {
 
 	var render = lipgloss.
 		NewStyle().
-		Align(lipgloss.Center)
-
-	var sidebar = lipgloss.
-		JoinVertical(lipgloss.Left, m.currentSound.View(), m.options.View())
+		Padding(2).
+		Border(lipgloss.NormalBorder())
 
 	var mainContainer = lipgloss.
-		JoinHorizontal(lipgloss.Left, sidebar, m.wrapper.View())
+		JoinVertical(lipgloss.Left, m.options.View(), m.wrapper.View())
+
+	var header = lipgloss.
+		JoinHorizontal(lipgloss.Center, m.header.View(), lipgloss.NewStyle().MarginRight(2).Render(""), m.currentSound.View())
 
 	var layout = lipgloss.
-		JoinVertical(lipgloss.Left, m.header.View(), mainContainer)
+		JoinVertical(lipgloss.Top, header, mainContainer)
 
 	return fmt.Sprint(
-		lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, render.Render(layout)),
+		render.Render(layout),
 	)
 }

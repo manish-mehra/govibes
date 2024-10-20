@@ -30,7 +30,7 @@ func main() {
 	// get args
 	args := os.Args[1:]
 	var ctx context.Context
-	var cancel context.CancelFunc
+	// var cancel context.CancelFunc
 	// if no args, start application in interactive mode
 	if len(args) == 0 {
 		ui.Ui_Main()
@@ -44,7 +44,7 @@ func main() {
 				panic(err)
 			}
 
-			ctx, cancel = context.WithCancel(context.Background())
+			ctx, _ = context.WithCancel(context.Background())
 			wg.Add(1)
 			go lib.ListenKeyboardInput(ctx, configPaths.ConfigJson, configPaths.SoundFilePath)
 			fmt.Println(Cyan + "Playing " + Yellow + arg + "🎧" + Reset)
@@ -54,7 +54,7 @@ func main() {
 	}
 
 	wg.Wait()
-	cancel()
+	// cancel()
 }
 
 func getKeyAsString[T any](mymap map[string]T, arg string) string {

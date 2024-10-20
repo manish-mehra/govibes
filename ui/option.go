@@ -20,13 +20,20 @@ func (m optionsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m optionsModel) View() string {
 	var ui = lipgloss.
-		NewStyle().
-		Height(16).
-		Align(lipgloss.Left).
-		Width(20).
-		BorderStyle(lipgloss.NormalBorder())
+		NewStyle()
 
-	options := fmt.Sprintf("%s \n\n %s \n %s \n %s \n %s", " OPTIONS", "[S] Sound", "[A] About", "[H] Help", "[Q] Quit")
+	var buttonWrapper = lipgloss.
+		NewStyle().
+		Background(lipgloss.Color("#00ADD8"))
+
+	// TODO: only highlight the current selected tab
+	options := fmt.Sprintf(
+		"%s %s  %s %s",
+		buttonWrapper.Render("[S]Sounds"),
+		"[A]About",
+		"[H]Help",
+		"[Q]Quit",
+	)
 
 	return ui.Render(options)
 }

@@ -5,13 +5,11 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-/*
-	var asciiTitle = `
-
+var asciiTitle = `
 █▀▀ █▀█ █ █ █ █▄▄ █▀▀ █▀
 █▄█ █▄█ ▀▄▀ █ █▄█ ██▄ ▄█
 `
-*/
+
 type headerModel struct{}
 
 func (m headerModel) Init() tea.Cmd {
@@ -27,10 +25,7 @@ func (m headerModel) View() string {
 
 	var ui = lipgloss.
 		NewStyle().
-		Align(lipgloss.Center).
-		Height(1).
-		Width(80).
-		BorderStyle(lipgloss.NormalBorder())
+		Border(lipgloss.NormalBorder())
 
-	return ui.Render("GOVIBES")
+	return ui.Render(asciiTitle)
 }
