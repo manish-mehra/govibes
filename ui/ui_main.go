@@ -3,6 +3,7 @@ package ui
 // TODO: Add about, help and sound in main model
 // TODO: should change color based on current view
 // TODO: highlight current selected item in sound list
+// TODO: text color based on terminal theme
 
 import (
 	"context"
@@ -107,8 +108,8 @@ func (m model) View() string {
 
 	var render = lipgloss.
 		NewStyle().
-		Padding(2).
-		Border(lipgloss.NormalBorder())
+		PaddingLeft(2)
+
 	var header = lipgloss.
 		JoinHorizontal(lipgloss.Center, m.header.View(), lipgloss.NewStyle().MarginRight(2).Render(""), m.currentSound.View())
 

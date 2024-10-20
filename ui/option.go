@@ -29,10 +29,10 @@ func (m optionsModel) View() string {
 
 	options := fmt.Sprintf(
 		"%s %s  %s %s",
-		buttonWrapper.Render("[S]Sounds"),
-		"[A]About",
-		"[H]Help",
-		"[Q]Quit",
+		buttonWrapper.Render("[s]sounds"),
+		"[a]about",
+		"[h]help",
+		"[q]quit",
 	)
 
 	return ui.Render(options)
