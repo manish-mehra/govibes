@@ -1,8 +1,8 @@
 package ui
 
-// TODO: remove wrapper component.
 // TODO: Add about, help and sound in main model
-// TODO: table to list component
+// TODO: should change color based on current view
+// TODO: highlight current selected item in sound list
 
 import (
 	"context"
@@ -15,7 +15,6 @@ import (
 )
 
 var paths = lib.GetAudioFilesPath("./audio")
-var sound_ls = sound_list()
 
 var wg sync.WaitGroup
 
@@ -27,7 +26,7 @@ type model struct {
 	currentSound currentSoundModel
 	options      optionsModel
 	about        aboutModel
-	sounds       soundModel
+	sounds       soundsModel
 	currentView  string // s, h, a
 	width        int
 	height       int
@@ -39,9 +38,9 @@ func initModel() model {
 		currentSound: currentSoundModel{
 			sound: "No sound selected",
 		},
+		sounds:      soundsModel{list: load_sounds()},
 		currentView: "s",
 		options:     optionsModel{},
-		width:       20,
 	}
 }
 
@@ -62,24 +61,25 @@ func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "esc", "ctrl+c":
-			return m, tea.Quit
+			return m, tea.Batch(
+				tea.ClearScreen, // TODO: Not clearning screen
+				tea.Quit,
+			)
 		case "a":
 			m.currentView = "a"
 			return m, nil
 		case "s":
 			m.currentView = "s"
-			m.sounds = soundModel{table: sound_ls} // Warning: declared in wrapper
-
 			return m, nil
 		default:
 			if m.currentView == "s" {
 				updatedSounds, _ := m.sounds.Update(msg)
-				m.sounds = updatedSounds.(soundModel) // Reassign the updated soundModel
+				m.sounds = updatedSounds.(soundsModel) // Reassign the updated soundModel
 
-				if m.sounds.selectedSound != "" {
-					m.currentSound.sound = m.sounds.selectedSound
+				if m.sounds.choice != "" {
+					m.currentSound.sound = m.sounds.choice
 					// get config json & sound file path based on selected sound
-					configPaths, err := lib.GetConfigPaths(paths[m.sounds.selectedSound])
+					configPaths, err := lib.GetConfigPaths(paths[m.sounds.choice])
 					if err != nil {
 						panic(err)
 					}

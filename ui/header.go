@@ -24,8 +24,7 @@ func (m headerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m headerModel) View() string {
 
 	var ui = lipgloss.
-		NewStyle().
-		Border(lipgloss.NormalBorder())
+		NewStyle()
 
 	return ui.Render(asciiTitle)
 }

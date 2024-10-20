@@ -24,9 +24,9 @@ func (m optionsModel) View() string {
 
 	var buttonWrapper = lipgloss.
 		NewStyle().
-		Background(lipgloss.Color("#00ADD8"))
+		Background(lipgloss.Color("#00ADD8")).
+		Foreground(lipgloss.Color("#00000"))
 
-	// TODO: only highlight the current selected tab
 	options := fmt.Sprintf(
 		"%s %s  %s %s",
 		buttonWrapper.Render("[S]Sounds"),
