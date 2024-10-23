@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"bufio"
 	"context"
 	"encoding/binary"
 	"encoding/json"
@@ -10,6 +11,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -171,4 +173,45 @@ func ListenKeyboardInput(ctx context.Context, configJsonPath string, soundFilePa
 			}
 		}
 	}
+}
+
+// getDeviceInfoFromProcBusInputDevices parses the /proc/bus/input/devices file
+// to map each event device to its human-readable name.
+func GetDeviceInfoFromProcBusInputDevices() (map[string]string, error) {
+	deviceInfo := make(map[string]string)
+
+	file, err := os.Open("/proc/bus/input/devices")
+	if err != nil {
+		return nil, fmt.Errorf("error reading /proc/bus/input/devices: %w", err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	var currentName string
+	var currentEvent string
+
+	// Regular expressions to match the relevant lines
+	nameRegex := regexp.MustCompile(`^N: Name="(.+)"`)
+	eventRegex := regexp.MustCompile(`H: Handlers=.*(event[0-9]+)`)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		// Check for device name
+		if nameMatches := nameRegex.FindStringSubmatch(line); len(nameMatches) > 1 {
+			currentName = nameMatches[1]
+		}
+
+		// Check for event handler (eventX)
+		if eventMatches := eventRegex.FindStringSubmatch(line); len(eventMatches) > 1 {
+			currentEvent = eventMatches[1]
+			deviceInfo["/dev/input/"+currentEvent] = currentName
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("error scanning /proc/bus/input/devices: %w", err)
+	}
+
+	return deviceInfo, nil
 }
