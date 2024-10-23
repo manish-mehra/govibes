@@ -1,9 +1,8 @@
 package ui
 
-// TODO: Add about, help and sound in main model
-// TODO: should change color based on current view
+// TODO: add keyboard listener package
 // TODO: highlight current selected item in sound list
-// TODO: text color based on terminal theme
+// TODO: Add about, help and sound in main model
 
 import (
 	"context"
