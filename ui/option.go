@@ -1,13 +1,13 @@
 package ui
 
 import (
-	"fmt"
-
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
-type optionsModel struct{}
+type optionsModel struct {
+	selected string
+}
 
 func (m optionsModel) Init() tea.Cmd {
 	return nil
@@ -27,13 +27,17 @@ func (m optionsModel) View() string {
 		Background(lipgloss.Color("#00ADD8")).
 		Foreground(lipgloss.Color("#00000"))
 
-	options := fmt.Sprintf(
-		"%s %s  %s %s",
-		buttonWrapper.Render("[s]sounds"),
-		"[a]about",
-		"[h]help",
-		"[q]quit",
-	)
+	var optionStr = []string{"[i]input channels", "[s]sounds", "[a]about", "[h]help", "[q]quit"}
+
+	options := ""
+	for _, str := range optionStr {
+
+		if m.selected == string(str[1]) {
+			options += buttonWrapper.Render(str) + " "
+			continue
+		}
+		options += str + " "
+	}
 
 	return ui.Render(options)
 }

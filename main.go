@@ -48,7 +48,7 @@ func main() {
 
 			ctx, _ = context.WithCancel(context.Background())
 			wg.Add(1)
-			go lib.ListenKeyboardInput(ctx, configPaths.ConfigJson, configPaths.SoundFilePath)
+			go lib.ListenKeyboardInput(ctx, configPaths.ConfigJson, configPaths.SoundFilePath, "/dev/input4")
 			fmt.Println(Cyan + "Playing " + Yellow + arg + "🎧" + Reset)
 		default:
 			fmt.Println("unknown args")

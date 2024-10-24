@@ -124,10 +124,10 @@ func GetAudioFilesPath(baseAudioFilesPath string) map[string][]string {
 /*
 * listent keyboard input from linux file system
  */
-func ListenKeyboardInput(ctx context.Context, configJsonPath string, soundFilePath string) {
+func ListenKeyboardInput(ctx context.Context, configJsonPath string, soundFilePath string, keyboardFilePath string) {
 
 	// TODO: find the right input channel
-	file, err := os.Open("/dev/input/event2") // Correct event device for your keyboard
+	file, err := os.Open(keyboardFilePath) // Correct event device for your keyboard
 	if err != nil {
 		fmt.Println("Error opening input device:", err)
 		return
