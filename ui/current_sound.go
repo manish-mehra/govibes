@@ -21,9 +21,14 @@ func (m currentSoundModel) View() string {
 
 	var ui = lipgloss.
 		NewStyle().
-		Align(lipgloss.Center).
-		Width(30)
+		Align(lipgloss.Left).
+		Foreground(lipgloss.Color("#00000")).
+		Background(lipgloss.Color("#FFC300 "))
 
-	return ui.Render("🎧", m.sound)
+	if m.sound == "" {
+		return ui.Render("")
+	}
+
+	return ui.Render(" 🎧", m.sound, " ")
 
 }

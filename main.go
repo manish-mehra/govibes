@@ -1,5 +1,3 @@
-// TODO: basic feature by args
-// TODO: style fixes
 package main
 
 import (

@@ -1,8 +1,8 @@
 package ui
 
-// TODO: add keyboard listener package
-// TODO: highlight current selected item in sound list
-// TODO: Add about, help and sound in main model
+// TODO: store default sound in a cache file
+// TODO: fix change input/sound bug
+// TODO: play sound by args on cli
 
 import (
 	"context"
@@ -26,6 +26,7 @@ type model struct {
 	options           optionsModel
 	about             aboutModel
 	sounds            soundsModel
+	help              helpModel
 	inputDevices      inputDevicesModel
 	alert             string
 	keyboardInputPath string
@@ -42,13 +43,12 @@ func initModel() model {
 	}
 
 	return model{
-		header: headerModel{},
-		currentSound: currentSoundModel{
-			sound: "No sound selected",
-		},
-		inputDevices: inputDevicesModel{list: load_devices(), paths: inputDevLs},
+		header:       headerModel{},
+		currentSound: currentSoundModel{},
+		inputDevices: inputDevicesModel{list: load_devices(), paths: inputDevLs, choice: ""},
 		sounds:       soundsModel{list: load_sounds()},
-		currentView:  "s", // i, s, h
+		currentView:  "i", // i, s, h
+		help:         helpModel{},
 		options:      optionsModel{selected: "i"},
 	}
 }
@@ -65,7 +65,7 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
-	m.alert = ""
+
 	switch msg := message.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -78,6 +78,9 @@ func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			m.currentView = "a"
 			m.options.selected = "a"
 			return m, nil
+		case "h":
+			m.currentView = "h"
+			m.options.selected = "h"
 		case "s":
 			m.currentView = "s"
 			m.options.selected = "s"
@@ -101,20 +104,21 @@ func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 								}
 							**/
 							m.keyboardInputPath = path
-							m.alert = "Selected" + " " + m.inputDevices.choice
+							m.alert = ""
+							// m.alert = "Selected" + " " + m.inputDevices.choice
 						}
 					}
 
 				}
 			}
 			if m.currentView == "s" {
-				updatedSounds, _ := m.sounds.Update(msg)
-				m.sounds = updatedSounds.(soundsModel) // Reassign the updated soundModel
 				if m.keyboardInputPath == "" {
 					m.alert = "Please select an input channel first"
 					return m, nil
 				}
 
+				updatedSounds, _ := m.sounds.Update(msg)
+				m.sounds = updatedSounds.(soundsModel) // Reassign the updated soundModel
 				if m.sounds.choice != "" {
 					m.currentSound.sound = m.sounds.choice
 					// get config json & sound file path based on selected sound
@@ -145,28 +149,54 @@ func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() string {
 
-	var render = lipgloss.
+	var ui = lipgloss.
 		NewStyle().
-		PaddingLeft(2)
+		PaddingLeft(2).
+		MarginBottom(2)
 
 	var header = lipgloss.
-		JoinHorizontal(lipgloss.Center, m.header.View(), lipgloss.NewStyle().MarginRight(2).Render(""), m.currentSound.View())
+		JoinHorizontal(lipgloss.Left, m.header.View())
+
+	var alert = lipgloss.
+		NewStyle().
+		Foreground(lipgloss.Color("#D2042D")).
+		Render(m.alert)
+
+	var inputDeviceUI = lipgloss.
+		NewStyle().
+		Background(lipgloss.Color("#FF69B4")).
+		Foreground(lipgloss.Color("#00000")).
+		Render(" ", m.inputDevices.choice, " ")
+	if m.inputDevices.choice == "" {
+		inputDeviceUI = ""
+	}
+
+	var footer = lipgloss.
+		NewStyle().
+		Align(lipgloss.Left).
+		Render(inputDeviceUI, m.currentSound.View())
 
 	var aboutLayout = lipgloss.
-		JoinVertical(lipgloss.Top, header, m.options.View(), m.about.View(), m.alert)
+		JoinVertical(lipgloss.Left, header, m.options.View(), m.about.View(), footer, alert)
 	if m.currentView == "a" {
-		return render.Render(aboutLayout)
+		return ui.Render(aboutLayout)
 	}
 
 	var soundLayout = lipgloss.
-		JoinVertical(lipgloss.Top, header, m.options.View(), m.sounds.View(), m.alert)
+		JoinVertical(lipgloss.Left, header, m.options.View(), m.sounds.View(), footer, alert)
 	if m.currentView == "s" {
-		return render.Render(soundLayout)
+		return ui.Render(soundLayout)
 	}
-	var inputDevicesLayout = lipgloss.JoinVertical(lipgloss.Top, header, m.options.View(), m.inputDevices.View(), m.alert)
+	var inputDevicesLayout = lipgloss.JoinVertical(lipgloss.Left, header, m.options.View(), m.inputDevices.View(), footer, alert)
 	if m.currentView == "i" {
-		return render.Render(inputDevicesLayout)
+		return ui.Render(inputDevicesLayout)
+	}
+	var helpLayout = lipgloss.
+		JoinVertical(lipgloss.Left, header, m.options.View(), m.help.View(), footer, alert)
+
+	if m.currentView == "h" {
+		return ui.Render(helpLayout)
 	}
 
-	return render.Render(header, "unknow view")
+	return ui.Render(header, "unknow view")
 }

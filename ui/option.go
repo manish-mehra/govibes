@@ -5,6 +5,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+var optionStr = []string{"[i]input devices", "[s]sounds", "[a]about", "[h]help", "[q]quit"}
+
 type optionsModel struct {
 	selected string
 }
@@ -27,13 +29,11 @@ func (m optionsModel) View() string {
 		Background(lipgloss.Color("#00ADD8")).
 		Foreground(lipgloss.Color("#00000"))
 
-	var optionStr = []string{"[i]input channels", "[s]sounds", "[a]about", "[h]help", "[q]quit"}
-
 	options := ""
 	for _, str := range optionStr {
 
 		if m.selected == string(str[1]) {
-			options += buttonWrapper.Render(str) + " "
+			options += buttonWrapper.Render(" ", str, " ") + " "
 			continue
 		}
 		options += str + " "

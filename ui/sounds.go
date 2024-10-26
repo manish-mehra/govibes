@@ -95,7 +95,7 @@ func load_sounds() list.Model {
 	const defaultWidth = 70
 
 	l := list.New(items, itemDelegate{}, defaultWidth, listHeight)
-	l.Title = "Available keyboard sounds"
+	l.Title = " Available keyboard sounds "
 	l.SetShowStatusBar(true)
 	l.SetFilteringEnabled(false)
 	l.Styles.Title = titleStyle
