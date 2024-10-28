@@ -1,4 +1,4 @@
 {
-	"input_device": "",
-	"keyboard_sound":""
+	"input_device": "/dev/input/event2",
+	"keyboard_sound": "topre-purple-hybrid-pbt"
 }

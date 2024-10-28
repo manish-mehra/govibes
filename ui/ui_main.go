@@ -1,6 +1,5 @@
 package ui
 
-// TODO: store default sound in a cache file
 // TODO: fix change input/sound bug
 // TODO: play sound by args on cli
 
@@ -21,8 +20,11 @@ var cancel context.CancelFunc // holds the cancel function of the previous sound
 var ctx context.Context
 
 var preference = lib.PreferenceManager{
-	Preferences: lib.UserPreferences{},
-	Path:        "config.json",
+	Preferences: lib.UserPreferences{
+		InputDevice:   "",
+		KeyboardSound: "",
+	},
+	Path: "preference.json",
 }
 
 type model struct {
@@ -42,24 +44,35 @@ type model struct {
 
 func initModel() model {
 
+	err := preference.InitPreferences()
+	if err != nil {
+		log.Fatal("error initializing preferences ", err)
+	}
 	inputDevLs, err := lib.GetDeviceInfoFromProcBusInputDevices()
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	var lastInputDevice string
+	for path, devName := range inputDevLs {
+		if preference.Preferences.InputDevice == path {
+			lastInputDevice = devName
+		}
+	}
+	// BUG: sound view update problem. if preference is already there, it should play using those without switching to sound view.
 	return model{
-		header:       headerModel{},
-		currentSound: currentSoundModel{},
-		inputDevices: inputDevicesModel{list: load_devices(), paths: inputDevLs, choice: ""},
-		sounds:       soundsModel{list: load_sounds()},
-		currentView:  "i", // i, s, h
-		help:         helpModel{},
-		options:      optionsModel{selected: "i"},
+		header:            headerModel{},
+		currentSound:      currentSoundModel{},
+		inputDevices:      inputDevicesModel{list: load_devices(), paths: inputDevLs, choice: lastInputDevice},
+		sounds:            soundsModel{list: load_sounds(), choice: preference.Preferences.KeyboardSound},
+		currentView:       "i", // i, s, h
+		help:              helpModel{},
+		options:           optionsModel{selected: "i"},
+		keyboardInputPath: preference.Preferences.InputDevice,
 	}
 }
 
 func Ui_Main() {
-	p := tea.NewProgram(initModel())
+	p := tea.NewProgram(initModel(), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)
 	}
@@ -109,6 +122,7 @@ func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 								}
 							**/
 							m.keyboardInputPath = path
+							preference.UpdatePreferences(lib.UserPreferences{InputDevice: path})
 							m.alert = ""
 							// m.alert = "Selected" + " " + m.inputDevices.choice
 						}
@@ -138,6 +152,8 @@ func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 					ctx, cancel = context.WithCancel(context.Background())
 					wg.Add(1)
 					go lib.ListenKeyboardInput(ctx, configPaths.ConfigJson, configPaths.SoundFilePath, m.keyboardInputPath)
+
+					preference.UpdatePreferences(lib.UserPreferences{KeyboardSound: m.sounds.choice})
 
 				}
 			}

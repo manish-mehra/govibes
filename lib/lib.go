@@ -226,7 +226,7 @@ type PreferenceManager struct {
 	Path        string
 }
 
-func (s *PreferenceManager) updateConfig() error {
+func (s *PreferenceManager) InitPreferences() error {
 	file, err := os.Open(s.Path)
 	if err != nil {
 		return fmt.Errorf("error opening settings.json: %w", err)
@@ -246,7 +246,7 @@ func (s *PreferenceManager) updateConfig() error {
 	return nil
 }
 
-func (s *PreferenceManager) updateSetting(newPreference UserPreferences) error {
+func (s *PreferenceManager) UpdatePreferences(newPreference UserPreferences) error {
 	// Open the file in read-write mode
 	file, err := os.OpenFile(s.Path, os.O_RDWR, 0644)
 	if err != nil {
