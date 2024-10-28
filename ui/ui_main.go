@@ -20,6 +20,11 @@ var wg sync.WaitGroup
 var cancel context.CancelFunc // holds the cancel function of the previous sound
 var ctx context.Context
 
+var preference = lib.PreferenceManager{
+	Preferences: lib.UserPreferences{},
+	Path:        "config.json",
+}
+
 type model struct {
 	header            headerModel
 	currentSound      currentSoundModel

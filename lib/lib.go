@@ -215,3 +215,84 @@ func GetDeviceInfoFromProcBusInputDevices() (map[string]string, error) {
 
 	return deviceInfo, nil
 }
+
+type UserPreferences struct {
+	InputDevice   string `json:"input_device"`
+	KeyboardSound string `json:"keyboard_sound"`
+}
+
+type PreferenceManager struct {
+	Preferences UserPreferences
+	Path        string
+}
+
+func (s *PreferenceManager) updateConfig() error {
+	file, err := os.Open(s.Path)
+	if err != nil {
+		return fmt.Errorf("error opening settings.json: %w", err)
+	}
+	defer file.Close()
+
+	// Read the file content
+	preferenceJson, err := io.ReadAll(file)
+	if err != nil {
+		return fmt.Errorf("error reading json file: %w", err)
+	}
+
+	// Unmarshal JSON data into s.config
+	if err = json.Unmarshal(preferenceJson, &s.Preferences); err != nil {
+		return fmt.Errorf("error unmarshalling json file: %w", err)
+	}
+	return nil
+}
+
+func (s *PreferenceManager) updateSetting(newPreference UserPreferences) error {
+	// Open the file in read-write mode
+	file, err := os.OpenFile(s.Path, os.O_RDWR, 0644)
+	if err != nil {
+		return fmt.Errorf("error opening json file: %w", err)
+	}
+	defer file.Close()
+
+	// Read the current contents of the file
+	preferenceJson, err := io.ReadAll(file)
+	if err != nil {
+		return fmt.Errorf("error reading json file: %w", err)
+	}
+
+	// Unmarshal the file content into the Settings struct
+	if len(preferenceJson) > 0 {
+		if err := json.Unmarshal(preferenceJson, &s.Preferences); err != nil {
+			return fmt.Errorf("error unmarshalling json file: %w", err)
+		}
+	}
+
+	// Update only specific fields
+	if newPreference.InputDevice != "" {
+		s.Preferences.InputDevice = newPreference.InputDevice
+	}
+	if newPreference.KeyboardSound != "" {
+		s.Preferences.KeyboardSound = newPreference.KeyboardSound
+	}
+
+	// Seek to the beginning of the file and truncate it
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		return fmt.Errorf("error seeking json file: %w", err)
+	}
+	if err := file.Truncate(0); err != nil {
+		return fmt.Errorf("error truncating json file: %w", err)
+	}
+
+	// Marshal the updated config and write it back to the file
+	updatedPreferenceJSON, err := json.MarshalIndent(s.Preferences, "", "\t")
+	if err != nil {
+		return fmt.Errorf("error marshalling updated json file: %w", err)
+	}
+
+	// Write the updated JSON to the file
+	if _, err := file.Write(updatedPreferenceJSON); err != nil {
+		return fmt.Errorf("error writing to json file: %w", err)
+	}
+
+	return nil
+}
