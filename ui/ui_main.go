@@ -1,6 +1,5 @@
 package ui
 
-// TODO: fix change input/sound bug
 // TODO: play sound by args on cli
 
 import (
@@ -27,6 +26,39 @@ var preference = lib.PreferenceManager{
 	Path: "preference.json",
 }
 
+type LoadedPreference struct {
+	lastKeyboardSound   string
+	lastKeyboardDev     string
+	lastKeyboardDevPath string
+}
+
+func loadPreferences() (LoadedPreference, error) {
+
+	lp := LoadedPreference{}
+	err := preference.InitPreferences()
+	if err != nil {
+		log.Fatal("error initializing preferences ", err)
+		return LoadedPreference{}, err
+	}
+
+	// lp.lastKeyboardSound = preference.Preferences.KeyboardSound
+	lp.lastKeyboardSound = preference.Preferences.KeyboardSound
+
+	inputDevLs, err := lib.GetDeviceInfoFromProcBusInputDevices()
+	if err != nil {
+		log.Fatal(err)
+		return LoadedPreference{}, err
+	}
+	// find the list device name based on the path
+	for path, devName := range inputDevLs {
+		if preference.Preferences.InputDevice == devName {
+			lp.lastKeyboardDevPath = path
+			lp.lastKeyboardDev = devName
+		}
+	}
+	return lp, nil
+}
+
 type model struct {
 	header            headerModel
 	currentSound      currentSoundModel
@@ -44,31 +76,45 @@ type model struct {
 
 func initModel() model {
 
-	err := preference.InitPreferences()
-	if err != nil {
-		log.Fatal("error initializing preferences ", err)
-	}
 	inputDevLs, err := lib.GetDeviceInfoFromProcBusInputDevices()
 	if err != nil {
 		log.Fatal(err)
 	}
-	var lastInputDevice string
-	for path, devName := range inputDevLs {
-		if preference.Preferences.InputDevice == path {
-			lastInputDevice = devName
-		}
+	loadedPreferences, err := loadPreferences()
+	if err != nil {
+		log.Fatal(err)
 	}
-	// BUG: sound view update problem. if preference is already there, it should play using those without switching to sound view.
+
+	if loadedPreferences.lastKeyboardDev != "" && loadedPreferences.lastKeyboardDevPath != "" && loadedPreferences.lastKeyboardSound != "" {
+		PlaySound(loadedPreferences.lastKeyboardSound, loadedPreferences.lastKeyboardDevPath)
+
+	}
+
 	return model{
 		header:            headerModel{},
-		currentSound:      currentSoundModel{},
-		inputDevices:      inputDevicesModel{list: load_devices(), paths: inputDevLs, choice: lastInputDevice},
-		sounds:            soundsModel{list: load_sounds(), choice: preference.Preferences.KeyboardSound},
+		currentSound:      currentSoundModel{sound: loadedPreferences.lastKeyboardSound},
+		inputDevices:      inputDevicesModel{list: load_devices(), paths: inputDevLs, choice: loadedPreferences.lastKeyboardDev},
+		sounds:            soundsModel{list: load_sounds(), choice: loadedPreferences.lastKeyboardSound},
 		currentView:       "i", // i, s, h
 		help:              helpModel{},
 		options:           optionsModel{selected: "i"},
-		keyboardInputPath: preference.Preferences.InputDevice,
+		keyboardInputPath: loadedPreferences.lastKeyboardDevPath,
 	}
+}
+
+func PlaySound(keyboardSound string, keyboardPath string) {
+	// get config json & sound file path based on selected sound
+	configPaths, err := lib.GetConfigPaths(paths[keyboardSound])
+	if err != nil {
+		panic(err)
+	}
+	// Cancel previous sound if it's playing
+	if cancel != nil {
+		cancel()
+	}
+	ctx, cancel = context.WithCancel(context.Background())
+	wg.Add(1)
+	go lib.ListenKeyboardInput(ctx, configPaths.ConfigJson, configPaths.SoundFilePath, keyboardPath)
 }
 
 func Ui_Main() {
@@ -89,7 +135,7 @@ func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q", "esc", "ctrl+c":
 			return m, tea.Batch(
-				tea.ClearScreen, // TODO: Not clearning screen
+				tea.ClearScreen,
 				tea.Quit,
 			)
 		case "a":
@@ -108,8 +154,6 @@ func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			m.options.selected = "i"
 			return m, nil
 		default:
-			// BUG: on changing inputDevices, it doesnt' change update the inputdevicepath unless we change views
-
 			if m.currentView == "i" {
 				updatedInputDevices, _ := m.inputDevices.Update(msg)
 				m.inputDevices = updatedInputDevices.(inputDevicesModel)
@@ -117,14 +161,10 @@ func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 				if m.inputDevices.choice != "" {
 					for path, devName := range m.inputDevices.paths {
 						if m.inputDevices.choice == devName {
-							/**	if cancel != nil {
-									cancel()
-								}
-							**/
 							m.keyboardInputPath = path
-							preference.UpdatePreferences(lib.UserPreferences{InputDevice: path})
+							preference.UpdatePreferences(lib.UserPreferences{InputDevice: devName})
+							PlaySound(m.currentSound.sound, path)
 							m.alert = ""
-							// m.alert = "Selected" + " " + m.inputDevices.choice
 						}
 					}
 
@@ -135,29 +175,14 @@ func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 					m.alert = "Please select an input channel first"
 					return m, nil
 				}
-
 				updatedSounds, _ := m.sounds.Update(msg)
 				m.sounds = updatedSounds.(soundsModel) // Reassign the updated soundModel
 				if m.sounds.choice != "" {
 					m.currentSound.sound = m.sounds.choice
-					// get config json & sound file path based on selected sound
-					configPaths, err := lib.GetConfigPaths(paths[m.sounds.choice])
-					if err != nil {
-						panic(err)
-					}
-					// Cancel previous sound if it's playing
-					if cancel != nil {
-						cancel()
-					}
-					ctx, cancel = context.WithCancel(context.Background())
-					wg.Add(1)
-					go lib.ListenKeyboardInput(ctx, configPaths.ConfigJson, configPaths.SoundFilePath, m.keyboardInputPath)
-
+					PlaySound(m.sounds.choice, m.keyboardInputPath)
 					preference.UpdatePreferences(lib.UserPreferences{KeyboardSound: m.sounds.choice})
-
 				}
 			}
-
 		}
 		return m, nil
 	case tea.WindowSizeMsg:

@@ -1,4 +1,4 @@
 {
-	"input_device": "/dev/input/event2",
-	"keyboard_sound": "topre-purple-hybrid-pbt"
+	"input_device": "AT Translated Set 2 keyboard",
+	"keyboard_sound": "cherrymx-brown-abs"
 }
