@@ -14,50 +14,8 @@ import (
 var paths = lib.GetAudioFilesPath("./audio")
 
 var wg sync.WaitGroup
-
 var cancel context.CancelFunc // holds the cancel function of the previous sound
 var ctx context.Context
-
-var preference = lib.PreferenceManager{
-	Preferences: lib.UserPreferences{
-		InputDevice:   "",
-		KeyboardSound: "",
-	},
-	Path: "preference.json",
-}
-
-type LoadedPreference struct {
-	lastKeyboardSound   string
-	lastKeyboardDev     string
-	lastKeyboardDevPath string
-}
-
-func loadPreferences() (LoadedPreference, error) {
-
-	lp := LoadedPreference{}
-	err := preference.InitPreferences()
-	if err != nil {
-		log.Fatal("error initializing preferences ", err)
-		return LoadedPreference{}, err
-	}
-
-	// lp.lastKeyboardSound = preference.Preferences.KeyboardSound
-	lp.lastKeyboardSound = preference.Preferences.KeyboardSound
-
-	inputDevLs, err := lib.GetDeviceInfoFromProcBusInputDevices()
-	if err != nil {
-		log.Fatal(err)
-		return LoadedPreference{}, err
-	}
-	// find the list device name based on the path
-	for path, devName := range inputDevLs {
-		if preference.Preferences.InputDevice == devName {
-			lp.lastKeyboardDevPath = path
-			lp.lastKeyboardDev = devName
-		}
-	}
-	return lp, nil
-}
 
 type model struct {
 	header            headerModel
@@ -80,6 +38,7 @@ func initModel() model {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	loadedPreferences, err := loadPreferences()
 	if err != nil {
 		log.Fatal(err)
@@ -87,7 +46,6 @@ func initModel() model {
 
 	if loadedPreferences.lastKeyboardDev != "" && loadedPreferences.lastKeyboardDevPath != "" && loadedPreferences.lastKeyboardSound != "" {
 		PlaySound(loadedPreferences.lastKeyboardSound, loadedPreferences.lastKeyboardDevPath)
-
 	}
 
 	return model{
