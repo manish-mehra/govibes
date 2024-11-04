@@ -1,4 +1,4 @@
-module github.com/manish-mehra/go-vibes
+module github.com/manish-mehra/govibes
 
 go 1.22.7
 

@@ -7,8 +7,8 @@ import (
 	"os"
 	"sync"
 
-	"github.com/manish-mehra/go-vibes/lib"
-	"github.com/manish-mehra/go-vibes/ui"
+	"github.com/manish-mehra/govibes/lib"
+	"github.com/manish-mehra/govibes/ui"
 )
 
 const baseAudioFilesPath string = "./audio"

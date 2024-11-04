@@ -5,7 +5,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/manish-mehra/go-vibes/lib"
+	"github.com/manish-mehra/govibes/lib"
 )
 
 type inputDevicesModel struct {

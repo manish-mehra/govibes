@@ -9,7 +9,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/manish-mehra/go-vibes/lib"
+	"github.com/manish-mehra/govibes/lib"
 )
 
 var paths = lib.GetAudioFilesPath("./audio")

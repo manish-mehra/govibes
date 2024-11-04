@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"github.com/manish-mehra/go-vibes/lib"
+	"github.com/manish-mehra/govibes/lib"
 	"log"
 )
 
