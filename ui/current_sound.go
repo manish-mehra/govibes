@@ -19,11 +19,8 @@ func (m currentSoundModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m currentSoundModel) View() string {
 
-	var ui = lipgloss.NewStyle()
 	if m.sound == "" {
-		return ui.Render("")
+		return lipgloss.NewStyle().Render("")
 	}
-
-	return ui.Render(SoundStyle(m.sound))
-
+	return SoundStyle(m.sound)
 }

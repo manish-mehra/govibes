@@ -1,6 +1,6 @@
 package ui
 
-// TODO: play sound by args on cli
+// TODO: help & about component
 
 import (
 	"context"
@@ -177,11 +177,6 @@ func (m model) View() string {
 	var header = lipgloss.
 		JoinHorizontal(lipgloss.Left, m.header.View())
 
-	var alert = lipgloss.
-		NewStyle().
-		Foreground(lipgloss.Color("#D2042D")).
-		Render(m.alert)
-
 	var inputDeviceUI = InputDeviceStyle(m.inputDevices.choice)
 	if m.inputDevices.choice == "" {
 		inputDeviceUI = ""
@@ -193,22 +188,22 @@ func (m model) View() string {
 		Render(inputDeviceUI, m.currentSound.View())
 
 	var aboutLayout = lipgloss.
-		JoinVertical(lipgloss.Left, header, m.options.View(), m.about.View(), footer, alert)
+		JoinVertical(lipgloss.Left, header, m.options.View(), m.about.View(), footer, AlertStyle(m.alert))
 	if m.currentView == "a" {
 		return ui.Render(aboutLayout)
 	}
 
 	var soundLayout = lipgloss.
-		JoinVertical(lipgloss.Left, header, m.options.View(), m.sounds.View(), footer, alert)
+		JoinVertical(lipgloss.Left, header, m.options.View(), m.sounds.View(), footer, AlertStyle(m.alert))
 	if m.currentView == "s" {
 		return ui.Render(soundLayout)
 	}
-	var inputDevicesLayout = lipgloss.JoinVertical(lipgloss.Left, header, m.options.View(), m.inputDevices.View(), footer, alert)
+	var inputDevicesLayout = lipgloss.JoinVertical(lipgloss.Left, header, m.options.View(), m.inputDevices.View(), footer, AlertStyle(m.alert))
 	if m.currentView == "i" {
 		return ui.Render(inputDevicesLayout)
 	}
 	var helpLayout = lipgloss.
-		JoinVertical(lipgloss.Left, header, m.options.View(), m.help.View(), footer, alert)
+		JoinVertical(lipgloss.Left, header, m.options.View(), m.help.View(), footer, AlertStyle(m.alert))
 
 	if m.currentView == "h" {
 		return ui.Render(helpLayout)

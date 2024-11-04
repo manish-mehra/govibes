@@ -33,3 +33,10 @@ func SoundStyle(sound string) string {
 		Background(lipgloss.Color("#FFC300 ")).
 		Render(" 🎧", sound, " ")
 }
+
+func AlertStyle(message string) string {
+	return lipgloss.
+		NewStyle().
+		Foreground(lipgloss.Color("#D2042D")).
+		Render(message)
+}

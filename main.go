@@ -1,4 +1,3 @@
-// TODO: style fixes
 package main
 
 import (
@@ -13,16 +12,6 @@ import (
 )
 
 const baseAudioFilesPath string = "./audio"
-
-// Color codes
-const (
-	Reset  = "\033[0m"
-	Red    = "\033[31m"
-	Green  = "\033[32m"
-	Yellow = "\033[33m"
-	Cyan   = "\033[36m"
-	White  = "\033[37m"
-)
 
 func main() {
 
@@ -41,13 +30,14 @@ func main() {
 		arg := args[0]
 		switch arg {
 		// govibes list
-		case "list":
+		case "sounds":
 			fmt.Printf("%s \n\n", ui.TitleStyle("Available Sounds"))
 
 			audio := lib.GetAudioFilesPath("./audio")
 			for key := range audio {
 				fmt.Printf("> %s \n", key)
 			}
+			fmt.Printf("\n\n")
 		case "default":
 			fmt.Printf("%s \n\n", ui.AsciiTitle)
 
@@ -55,7 +45,8 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			if loadedPreferences.LastKeyboardDev != "" && loadedPreferences.LastKeyboardDevPath != "" && loadedPreferences.LastKeyboardSound != "" {
+
+			if loadedPreferences.LastKeyboardDev != "" || loadedPreferences.LastKeyboardDevPath != "" || loadedPreferences.LastKeyboardSound != "" {
 				// get config json & sound file path based on selected sound
 				configPaths, err := lib.GetConfigPaths(paths[loadedPreferences.LastKeyboardSound])
 				if err != nil {
@@ -70,27 +61,46 @@ func main() {
 				go lib.ListenKeyboardInput(ctx, configPaths.ConfigJson, configPaths.SoundFilePath, loadedPreferences.LastKeyboardDevPath)
 
 				fmt.Printf("%s %s \n\n", ui.InputDeviceStyle(loadedPreferences.LastKeyboardDev), ui.SoundStyle(loadedPreferences.LastKeyboardSound))
+			} else {
+				fmt.Printf("%s \n\n", ui.AlertStyle("No default configrations are found!"))
 			}
-
 		case getKeyAsString(paths, arg):
-			/**
-			configPaths, err := lib.GetConfigPaths(paths[arg])
-			  if err != nil {
-				panic(err)
+			/*
+			* Pass sound as args
+			* Use keyboard device from preference.json as default input channel
+			 */
+			fmt.Printf("%s \n\n", ui.AsciiTitle)
+
+			loadedPreferences, err := ui.LoadPreferences()
+			if err != nil {
+				log.Fatal(err)
 			}
 
-			ctx, _ = context.WithCancel(context.Background())
-			wg.Add(1)
-			go lib.ListenKeyboardInput(ctx, configPaths.ConfigJson, configPaths.SoundFilePath, "/dev/input4")
-			**/
-			fmt.Println(Cyan + "Playing " + Yellow + arg + "🎧" + Reset)
+			if loadedPreferences.LastKeyboardDev != "" && loadedPreferences.LastKeyboardDevPath != "" {
+				// get config json & sound file path based on selected sound
+				configPaths, err := lib.GetConfigPaths(paths[arg])
+				if err != nil {
+					panic(err)
+				}
+				// Cancel previous sound if it's playing
+				if cancel != nil {
+					cancel()
+				}
+				ctx, cancel = context.WithCancel(context.Background())
+				wg.Add(1)
+				go lib.ListenKeyboardInput(ctx, configPaths.ConfigJson, configPaths.SoundFilePath, loadedPreferences.LastKeyboardDevPath)
+
+				fmt.Printf("%s %s \n\n", ui.InputDeviceStyle(loadedPreferences.LastKeyboardDev), ui.SoundStyle(arg))
+			} else {
+				fmt.Printf("%s \n\n", ui.AlertStyle("No default input channel found!"))
+			}
+
 		default:
 			fmt.Println("unknown args")
 		}
 	}
 
 	wg.Wait()
-	// cancel()
 }
 
 func getKeyAsString[T any](mymap map[string]T, arg string) string {
