@@ -63,8 +63,7 @@ func GetConfigPaths(selectedAudioFile []string) (ConfigPaths, error) {
 }
 
 /*
-* unmarshal config.json
-* and execute sound based on keyevent and config.json mapping
+* execute sound based on keyevent and config.json mapping
  */
 func playAudio(input inputEvent, soundData SoundPack, audioFilePath string) {
 	keyCodeStr := strconv.Itoa(int(input.Code))
@@ -122,11 +121,10 @@ func GetAudioFilesPath(baseAudioFilesPath string) map[string][]string {
 }
 
 /*
-* listent keyboard input from linux file system
+* listen keyboard input from linux file system
  */
 func ListenKeyboardInput(ctx context.Context, configJsonPath string, soundFilePath string, keyboardFilePath string) {
 
-	// TODO: find the right input channel
 	file, err := os.Open(keyboardFilePath) // Correct event device for your keyboard
 	if err != nil {
 		fmt.Println("Error opening input device:", err)

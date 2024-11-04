@@ -14,12 +14,12 @@ var preference = lib.PreferenceManager{
 }
 
 type LoadedPreference struct {
-	lastKeyboardSound   string
-	lastKeyboardDev     string
-	lastKeyboardDevPath string
+	LastKeyboardSound   string
+	LastKeyboardDev     string
+	LastKeyboardDevPath string
 }
 
-func loadPreferences() (LoadedPreference, error) {
+func LoadPreferences() (LoadedPreference, error) {
 
 	lp := LoadedPreference{}
 	err := preference.InitPreferences()
@@ -29,7 +29,7 @@ func loadPreferences() (LoadedPreference, error) {
 	}
 
 	// lp.lastKeyboardSound = preference.Preferences.KeyboardSound
-	lp.lastKeyboardSound = preference.Preferences.KeyboardSound
+	lp.LastKeyboardSound = preference.Preferences.KeyboardSound
 
 	inputDevLs, err := lib.GetDeviceInfoFromProcBusInputDevices()
 	if err != nil {
@@ -39,8 +39,8 @@ func loadPreferences() (LoadedPreference, error) {
 	// find the list device name based on the path
 	for path, devName := range inputDevLs {
 		if preference.Preferences.InputDevice == devName {
-			lp.lastKeyboardDevPath = path
-			lp.lastKeyboardDev = devName
+			lp.LastKeyboardDevPath = path
+			lp.LastKeyboardDev = devName
 		}
 	}
 	return lp, nil

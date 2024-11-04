@@ -84,7 +84,7 @@ func (m soundsModel) View() string {
 	return "\n" + m.list.View()
 }
 
-func load_sounds() list.Model {
+func Load_sounds() list.Model {
 	items := []list.Item{}
 
 	audio := lib.GetAudioFilesPath("./audio")

@@ -1,8 +1,10 @@
+// TODO: style fixes
 package main
 
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"sync"
 
@@ -30,7 +32,8 @@ func main() {
 	// get args
 	args := os.Args[1:]
 	var ctx context.Context
-	// var cancel context.CancelFunc
+	var cancel context.CancelFunc // holds the cancel function of the previous sound
+
 	// if no args, start application in interactive mode
 	if len(args) == 0 {
 		ui.Ui_Main()
@@ -38,15 +41,48 @@ func main() {
 		arg := args[0]
 		switch arg {
 		// govibes list
-		case getKeyAsString(paths, arg):
-			configPaths, err := lib.GetConfigPaths(paths[arg])
+		case "list":
+			fmt.Printf("%s \n\n", ui.TitleStyle("Available Sounds"))
+
+			audio := lib.GetAudioFilesPath("./audio")
+			for key := range audio {
+				fmt.Printf("> %s \n", key)
+			}
+		case "default":
+			fmt.Printf("%s \n\n", ui.AsciiTitle)
+
+			loadedPreferences, err := ui.LoadPreferences()
 			if err != nil {
+				log.Fatal(err)
+			}
+			if loadedPreferences.LastKeyboardDev != "" && loadedPreferences.LastKeyboardDevPath != "" && loadedPreferences.LastKeyboardSound != "" {
+				// get config json & sound file path based on selected sound
+				configPaths, err := lib.GetConfigPaths(paths[loadedPreferences.LastKeyboardSound])
+				if err != nil {
+					panic(err)
+				}
+				// Cancel previous sound if it's playing
+				if cancel != nil {
+					cancel()
+				}
+				ctx, cancel = context.WithCancel(context.Background())
+				wg.Add(1)
+				go lib.ListenKeyboardInput(ctx, configPaths.ConfigJson, configPaths.SoundFilePath, loadedPreferences.LastKeyboardDevPath)
+
+				fmt.Printf("%s %s \n\n", ui.InputDeviceStyle(loadedPreferences.LastKeyboardDev), ui.SoundStyle(loadedPreferences.LastKeyboardSound))
+			}
+
+		case getKeyAsString(paths, arg):
+			/**
+			configPaths, err := lib.GetConfigPaths(paths[arg])
+			  if err != nil {
 				panic(err)
 			}
 
 			ctx, _ = context.WithCancel(context.Background())
 			wg.Add(1)
 			go lib.ListenKeyboardInput(ctx, configPaths.ConfigJson, configPaths.SoundFilePath, "/dev/input4")
+			**/
 			fmt.Println(Cyan + "Playing " + Yellow + arg + "🎧" + Reset)
 		default:
 			fmt.Println("unknown args")

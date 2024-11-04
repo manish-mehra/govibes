@@ -4,11 +4,12 @@ package ui
 
 import (
 	"context"
+	"log"
+	"sync"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/manish-mehra/go-vibes/lib"
-	"log"
-	"sync"
 )
 
 var paths = lib.GetAudioFilesPath("./audio")
@@ -39,24 +40,27 @@ func initModel() model {
 		log.Fatal(err)
 	}
 
-	loadedPreferences, err := loadPreferences()
+	loadedPreferences, err := LoadPreferences()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if loadedPreferences.lastKeyboardDev != "" && loadedPreferences.lastKeyboardDevPath != "" && loadedPreferences.lastKeyboardSound != "" {
-		PlaySound(loadedPreferences.lastKeyboardSound, loadedPreferences.lastKeyboardDevPath)
+	if loadedPreferences.LastKeyboardDev != "" && loadedPreferences.LastKeyboardDevPath != "" && loadedPreferences.LastKeyboardSound != "" {
+		if cancel != nil {
+			cancel()
+		}
+		PlaySound(loadedPreferences.LastKeyboardSound, loadedPreferences.LastKeyboardDevPath)
 	}
 
 	return model{
 		header:            headerModel{},
-		currentSound:      currentSoundModel{sound: loadedPreferences.lastKeyboardSound},
-		inputDevices:      inputDevicesModel{list: load_devices(), paths: inputDevLs, choice: loadedPreferences.lastKeyboardDev},
-		sounds:            soundsModel{list: load_sounds(), choice: loadedPreferences.lastKeyboardSound},
+		currentSound:      currentSoundModel{sound: loadedPreferences.LastKeyboardSound},
+		inputDevices:      inputDevicesModel{list: load_devices(), paths: inputDevLs, choice: loadedPreferences.LastKeyboardDev},
+		sounds:            soundsModel{list: Load_sounds(), choice: loadedPreferences.LastKeyboardSound},
 		currentView:       "i", // i, s, h
 		help:              helpModel{},
 		options:           optionsModel{selected: "i"},
-		keyboardInputPath: loadedPreferences.lastKeyboardDevPath,
+		keyboardInputPath: loadedPreferences.LastKeyboardDevPath,
 	}
 }
 
@@ -112,22 +116,30 @@ func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			m.options.selected = "i"
 			return m, nil
 		default:
+
 			if m.currentView == "i" {
 				updatedInputDevices, _ := m.inputDevices.Update(msg)
 				m.inputDevices = updatedInputDevices.(inputDevicesModel)
-
 				if m.inputDevices.choice != "" {
 					for path, devName := range m.inputDevices.paths {
 						if m.inputDevices.choice == devName {
 							m.keyboardInputPath = path
 							preference.UpdatePreferences(lib.UserPreferences{InputDevice: devName})
-							PlaySound(m.currentSound.sound, path)
-							m.alert = ""
+							if cancel != nil {
+								cancel()
+							}
+							if m.currentSound.sound != "" {
+								PlaySound(m.currentSound.sound, m.keyboardInputPath)
+								m.alert = ""
+							} else {
+								m.alert = "\n Please select a sound"
+							}
+							break
 						}
 					}
-
 				}
 			}
+
 			if m.currentView == "s" {
 				if m.keyboardInputPath == "" {
 					m.alert = "Please select an input channel first"
@@ -137,8 +149,12 @@ func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 				m.sounds = updatedSounds.(soundsModel) // Reassign the updated soundModel
 				if m.sounds.choice != "" {
 					m.currentSound.sound = m.sounds.choice
+					if cancel != nil {
+						cancel()
+					}
 					PlaySound(m.sounds.choice, m.keyboardInputPath)
 					preference.UpdatePreferences(lib.UserPreferences{KeyboardSound: m.sounds.choice})
+					m.alert = ""
 				}
 			}
 		}
@@ -166,11 +182,7 @@ func (m model) View() string {
 		Foreground(lipgloss.Color("#D2042D")).
 		Render(m.alert)
 
-	var inputDeviceUI = lipgloss.
-		NewStyle().
-		Background(lipgloss.Color("#FF69B4")).
-		Foreground(lipgloss.Color("#00000")).
-		Render(" ", m.inputDevices.choice, " ")
+	var inputDeviceUI = InputDeviceStyle(m.inputDevices.choice)
 	if m.inputDevices.choice == "" {
 		inputDeviceUI = ""
 	}
