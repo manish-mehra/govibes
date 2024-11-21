@@ -67,7 +67,7 @@ func main() {
 			} else {
 				fmt.Printf("%s \n\n", ui.AlertStyle("No default configrations are found!"))
 			}
-		case getKeyAsString(paths, arg):
+		case lib.GetKeyAsString(paths, arg):
 			/*
 			* Pass sound as args
 			* Use keyboard device from preference.json as default input channel
@@ -104,12 +104,4 @@ func main() {
 	}
 
 	wg.Wait()
-}
-
-func getKeyAsString[T any](mymap map[string]T, arg string) string {
-	_, ok := mymap[arg]
-	if !ok {
-		return ""
-	}
-	return arg
 }
