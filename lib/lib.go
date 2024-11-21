@@ -16,6 +16,43 @@ import (
 	"strings"
 )
 
+func PrintHelp() string {
+	return `Govibes - Mechanical Keyboard Sound Simulator
+An unnecessary rewrite of mechvibes.com disguised as a CLI tool
+
+Usage:
+  govibes [command]
+
+Commands:
+  sounds           List available keyboard sound profiles
+                   Example output:
+                   > cherrymx-brown-pbt
+                   > cherrymx-red-abs
+                   > cherrymx-red-pbt
+                   > eg-oreo
+
+  <profile>        Play a specific keyboard sound profile
+                   Example: govibes eg-oreo
+                   If no sound is selected, interactive mode will be launched
+
+  default          Play the last used sound profile and input device
+
+  (no command)     Run interactive mode
+                   In interactive mode, you can:
+                   - Select sound profiles
+                   - Change input audio channel
+
+  help             Display this help information
+
+Examples:
+  govibes sounds        # List available sound profiles
+  govibes eg-oreo       # Play 'eg-oreo' sound profile
+  govibes default       # Play last used sound and input device
+  govibes               # Enter interactive mode
+
+Project Repository: https://github.com/manish-mehra/govibes`
+}
+
 type inputEvent struct {
 	Time  [16]byte
 	Type  uint16

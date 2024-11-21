@@ -5,7 +5,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-var optionStr = []string{"[i]input devices", "[s]sounds", "[a]about", "[h]help", "[q]quit"}
+var optionStr = []string{"[i]input devices", "[s]sounds", "[h]help", "[q]quit"}
 
 type optionsModel struct {
 	selected string

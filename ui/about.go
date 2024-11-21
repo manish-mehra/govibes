@@ -6,9 +6,7 @@ import (
 )
 
 var about = []string{
-	"Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
-	"Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
-	"Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+	"Govibes - an unnecessary rewrite of mechvibes.com (mechanical keyboard \nsound simulator) disguised as a cli tool",
 }
 
 type aboutModel struct{}

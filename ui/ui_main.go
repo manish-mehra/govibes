@@ -1,7 +1,5 @@
 package ui
 
-// TODO: help & about component
-
 import (
 	"context"
 	"log"
@@ -22,13 +20,12 @@ type model struct {
 	header            headerModel
 	currentSound      currentSoundModel
 	options           optionsModel
-	about             aboutModel
 	sounds            soundsModel
 	help              helpModel
 	inputDevices      inputDevicesModel
 	alert             string
 	keyboardInputPath string
-	currentView       string // s, h, a
+	currentView       string // s, h, i
 	width             int
 	height            int
 }
@@ -100,10 +97,6 @@ func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 				tea.ClearScreen,
 				tea.Quit,
 			)
-		case "a":
-			m.currentView = "a"
-			m.options.selected = "a"
-			return m, nil
 		case "h":
 			m.currentView = "h"
 			m.options.selected = "h"
@@ -186,12 +179,6 @@ func (m model) View() string {
 		NewStyle().
 		Align(lipgloss.Left).
 		Render(inputDeviceUI, m.currentSound.View())
-
-	var aboutLayout = lipgloss.
-		JoinVertical(lipgloss.Left, header, m.options.View(), m.about.View(), footer, AlertStyle(m.alert))
-	if m.currentView == "a" {
-		return ui.Render(aboutLayout)
-	}
 
 	var soundLayout = lipgloss.
 		JoinVertical(lipgloss.Left, header, m.options.View(), m.sounds.View(), footer, AlertStyle(m.alert))

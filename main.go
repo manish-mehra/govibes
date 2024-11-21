@@ -29,6 +29,9 @@ func main() {
 	} else {
 		arg := args[0]
 		switch arg {
+		case "help":
+			fmt.Printf("%s \n\n", ui.TitleStyle("Help"))
+			fmt.Printf("%s \n", lib.PrintHelp())
 		// govibes list
 		case "sounds":
 			fmt.Printf("%s \n\n", ui.TitleStyle("Available Sounds"))
