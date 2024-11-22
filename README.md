@@ -1,4 +1,5 @@
-![image](https://github.com/user-attachments/assets/07499aaa-c991-44b2-b366-2f43a17f4957)
+![image](https://github.com/user-attachments/assets/3d5dabab-1f48-4954-a60d-889475f686a1)
+
 
 # Govibes 🎹🔊
 An unnecessary rewrite of [mechvibes.com](https://mechvibes.com) (mechanical keyboard sound simulator) disguised as a CLI tool.
